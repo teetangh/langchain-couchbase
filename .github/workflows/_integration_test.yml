@@ -1,0 +1,71 @@
+name: Integration tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+      python-version:
+        required: true
+        type: string
+        description: "Python version to use"
+
+env:
+  POETRY_VERSION: "1.8.4"
+
+jobs:
+  build:
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    runs-on: ubuntu-latest
+    name: Python ${{ inputs.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ inputs.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: core
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --with test,test_integration
+
+      - name: Install deps outside pyproject
+        if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}
+        shell: bash
+        run: poetry run pip install "boto3<2" "google-cloud-aiplatform<2"
+
+      - name: Run integration tests
+        shell: bash
+        env:
+          COUCHBASE_CONNECTION_STRING: ${{ vars.COUCHBASE_CONNECTION_STRING }}
+          COUCHBASE_BUCKET_NAME: ${{ vars.COUCHBASE_BUCKET_NAME }}
+          COUCHBASE_SCOPE_NAME: ${{ vars.COUCHBASE_SCOPE_NAME }}
+          COUCHBASE_COLLECTION_NAME: ${{ vars.COUCHBASE_COLLECTION_NAME }}
+          COUCHBASE_CACHE_COLLECTION_NAME: ${{ vars.COUCHBASE_CACHE_COLLECTION_NAME }}
+          COUCHBASE_SEMANTIC_CACHE_COLLECTION_NAME: ${{ vars.COUCHBASE_SEMANTIC_CACHE_COLLECTION_NAME }}
+          COUCHBASE_CHAT_HISTORY_COLLECTION_NAME: ${{ vars.COUCHBASE_CHAT_HISTORY_COLLECTION_NAME }}
+          COUCHBASE_USERNAME: ${{ vars.COUCHBASE_USERNAME }}
+          COUCHBASE_PASSWORD: ${{ secrets.COUCHBASE_PASSWORD }}
+          COUCHBASE_SEMANTIC_CACHE_INDEX_NAME: ${{ vars.COUCHBASE_SEMANTIC_CACHE_INDEX_NAME }}
+          COUCHBASE_INDEX_NAME: ${{ vars.COUCHBASE_INDEX_NAME }}
+        run: |
+          make integration_tests
+
+      - name: Ensure the tests did not create any additional files
+        shell: bash
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'
