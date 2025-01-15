@@ -1,6 +1,7 @@
 """Test Couchbase Cache functionality"""
 
 import os
+import time
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -30,6 +31,7 @@ SEMANTIC_CACHE_COLLECTION_NAME = os.getenv(
 USERNAME = os.getenv("COUCHBASE_USERNAME", "")
 PASSWORD = os.getenv("COUCHBASE_PASSWORD", "")
 INDEX_NAME = os.getenv("COUCHBASE_SEMANTIC_CACHE_INDEX_NAME", "")
+SLEEP_DURATION = 1
 
 
 def set_all_env_vars() -> bool:
@@ -149,12 +151,16 @@ class TestCouchbaseCache:
             "foo", llm_string, [Generation(text="fizz"), Generation(text="Buzz")]
         )
 
+        # Wait for the documents to be indexed
+        time.sleep(SLEEP_DURATION)
         # foo and bar will have the same embedding produced by FakeEmbeddings
         cache_output = get_llm_cache().lookup("bar", llm_string)
         assert cache_output == [Generation(text="fizz"), Generation(text="Buzz")]
 
         # clear the cache
         get_llm_cache().clear()
+        # Wait for the documents to be indexed
+        time.sleep(SLEEP_DURATION)
 
         output = get_llm_cache().lookup("bar", llm_string)
         assert output != [Generation(text="fizz"), Generation(text="Buzz")]
@@ -186,6 +192,9 @@ class TestCouchbaseCache:
         get_llm_cache().update(
             seed_prompt, llm_string, [Generation(text="fizz"), Generation(text="Buzz")]
         )
+
+        # Wait for the documents to be indexed
+        time.sleep(SLEEP_DURATION)
 
         # foo and bar will have the same embedding produced by FakeEmbeddings
         cache_output = get_llm_cache().lookup("bar", llm_string)
