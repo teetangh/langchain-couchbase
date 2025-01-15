@@ -12,7 +12,7 @@ on:
       working-directory:
         required: true
         type: string
-        default: 'libs/langchain'
+        default: "."
       dangerous-nonmaster-release:
         required: false
         type: boolean
@@ -81,8 +81,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: langchain-ai/langchain
-          path: langchain
+          repository: Couchbase-Ecosystem/langchain-couchbase
+          path: .
           sparse-checkout: | # this only grabs files for relevant dir
             ${{ inputs.working-directory }}
           ref: ${{ github.ref }} # this scopes to just ref'd branch
@@ -90,7 +90,7 @@ jobs:
       - name: Check Tags
         id: check-tags
         shell: bash
-        working-directory: langchain/${{ inputs.working-directory }}
+        working-directory: .
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
@@ -128,7 +128,7 @@ jobs:
           echo prev-tag="$PREV_TAG" >> $GITHUB_OUTPUT
       - name: Generate release body
         id: generate-release-body
-        working-directory: langchain
+        working-directory: .
         env:
           WORKING_DIR: ${{ inputs.working-directory }}
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
@@ -153,8 +153,7 @@ jobs:
     needs:
       - build
       - release-notes
-    uses:
-      ./.github/workflows/_test_release.yml
+    uses: ./.github/workflows/_test_release.yml
     permissions: write-all
     with:
       working-directory: ${{ inputs.working-directory }}
@@ -268,43 +267,18 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Run integration tests
-        if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         env:
-          AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-          AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
-          AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
-          AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
-          AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
-          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
-          GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
-          GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
-          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
-          NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
-          WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
-          WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
-          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
-          PINECONE_ENVIRONMENT: ${{ secrets.PINECONE_ENVIRONMENT }}
-          ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
-          ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
-          ASTRA_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
-          ES_URL: ${{ secrets.ES_URL }}
-          ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
-          ES_API_KEY: ${{ secrets.ES_API_KEY }}
-          MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
-          VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
-          UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
-          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          COUCHBASE_CONNECTION_STRING: ${{ vars.COUCHBASE_CONNECTION_STRING }}
+          COUCHBASE_BUCKET_NAME: ${{ vars.COUCHBASE_BUCKET_NAME }}
+          COUCHBASE_SCOPE_NAME: ${{ vars.COUCHBASE_SCOPE_NAME }}
+          COUCHBASE_COLLECTION_NAME: ${{ vars.COUCHBASE_COLLECTION_NAME }}
+          COUCHBASE_CACHE_COLLECTION_NAME: ${{ vars.COUCHBASE_CACHE_COLLECTION_NAME }}
+          COUCHBASE_SEMANTIC_CACHE_COLLECTION_NAME: ${{ vars.COUCHBASE_SEMANTIC_CACHE_COLLECTION_NAME }}
+          COUCHBASE_CHAT_HISTORY_COLLECTION_NAME: ${{ vars.COUCHBASE_CHAT_HISTORY_COLLECTION_NAME }}
+          COUCHBASE_USERNAME: ${{ vars.COUCHBASE_USERNAME }}
+          COUCHBASE_PASSWORD: ${{ secrets.COUCHBASE_PASSWORD }}
+          COUCHBASE_SEMANTIC_CACHE_INDEX_NAME: ${{ vars.COUCHBASE_SEMANTIC_CACHE_INDEX_NAME }}
+          COUCHBASE_INDEX_NAME: ${{ vars.COUCHBASE_INDEX_NAME }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
@@ -384,7 +358,7 @@ jobs:
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
-          
+
       - name: Create Tag
         uses: ncipollo/release-action@v1
         with:
