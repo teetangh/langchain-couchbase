@@ -128,7 +128,7 @@ jobs:
           echo prev-tag="$PREV_TAG" >> $GITHUB_OUTPUT
       - name: Generate release body
         id: generate-release-body
-        working-directory: langchain
+        working-directory: .
         env:
           WORKING_DIR: ${{ inputs.working-directory }}
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
