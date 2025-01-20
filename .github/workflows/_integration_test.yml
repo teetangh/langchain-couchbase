@@ -1,6 +1,11 @@
 name: Integration tests
 
 on:
+  pull_request:
+
+  schedule:
+    - cron: "0 8 * * *"
+
   workflow_dispatch:
     inputs:
       working-directory:
