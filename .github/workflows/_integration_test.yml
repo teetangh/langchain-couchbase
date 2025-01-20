@@ -1,11 +1,13 @@
 name: Integration tests
 
 on:
+  pull_request:
+
+  schedule:
+    - cron: "0 8 * * *"
+
   workflow_dispatch:
     inputs:
-      working-directory:
-        required: true
-        type: string
       python-version:
         required: true
         type: string
@@ -18,7 +20,7 @@ jobs:
   build:
     defaults:
       run:
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: .
     runs-on: ubuntu-latest
     name: Python ${{ inputs.python-version }}
     steps:
@@ -29,17 +31,12 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ inputs.working-directory }}
+          working-directory: .
           cache-key: core
 
       - name: Install dependencies
         shell: bash
         run: poetry install --with test,test_integration
-
-      - name: Install deps outside pyproject
-        if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}
-        shell: bash
-        run: poetry run pip install "boto3<2" "google-cloud-aiplatform<2"
 
       - name: Run integration tests
         shell: bash
