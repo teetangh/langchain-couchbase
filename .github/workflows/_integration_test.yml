@@ -12,6 +12,7 @@ on:
         required: true
         type: string
         description: "Python version to use"
+        default: "3.11"
 
 env:
   POETRY_VERSION: "1.8.4"
