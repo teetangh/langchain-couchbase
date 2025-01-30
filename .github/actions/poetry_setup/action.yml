@@ -10,6 +10,7 @@ inputs:
   python-version:
     description: Python version, supporting MAJOR.MINOR only
     required: true
+    default: "3.11"
 
   poetry-version:
     description: Poetry version
