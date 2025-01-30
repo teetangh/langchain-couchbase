@@ -380,32 +380,34 @@ class CouchbaseVectorStore(VectorStore):
         # Check if TTL is provided
         ttl = kwargs.get("ttl", None)
 
-        embedded_texts = self._embedding_function.embed_documents(list(texts))
+        # Insert in batches
+        for i in range(0, len(texts), batch_size):
+            batch_texts = texts[i : i + batch_size]
+            batch_metadatas = metadatas[i : i + batch_size]
+            batch_ids = ids[i : i + batch_size]
+            batch_embedded_texts = self._embedding_function.embed_documents(batch_texts)
 
-        documents_to_insert = [
-            {
+            batch_docs = {
                 id: {
                     self._text_key: text,
-                    self._embedding_key: vector,
                     self._metadata_key: metadata,
+                    self._embedding_key: vector,
                 }
-                for id, text, vector, metadata in zip(
-                    ids, texts, embedded_texts, metadatas
+                for id, text, metadata, vector in zip(
+                    batch_ids, batch_texts, batch_metadatas, batch_embedded_texts
                 )
             }
-        ]
 
-        # Insert in batches
-        for i in range(0, len(documents_to_insert), batch_size):
-            batch = documents_to_insert[i : i + batch_size]
             try:
                 # Insert with TTL if provided
                 if ttl:
-                    result = self._collection.upsert_multi(batch[0], expiry=ttl)
+                    result = self._collection.upsert_multi(batch_docs, expiry=ttl)
                 else:
-                    result = self._collection.upsert_multi(batch[0])
+                    result = self._collection.upsert_multi(batch_docs)
                 if result.all_ok:
-                    doc_ids.extend(batch[0].keys())
+                    doc_ids.extend(batch_docs.keys())
+                else:
+                    raise ValueError("Failed to insert documents.", result.exceptions)
             except DocumentExistsException as e:
                 raise ValueError(f"Document already exists: {e}")
 
