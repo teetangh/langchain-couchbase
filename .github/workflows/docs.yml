@@ -26,16 +26,19 @@ jobs:
           pip install . # Install project dependencies from pyproject.toml
           pip install sphinx sphinx-rtd-theme # Install Sphinx and theme
 
+      - name: Ensure _static directory exists
+        run: mkdir -p docs/source/_static
+
       - name: Build Sphinx documentation
         run: make -C docs html
 
-      - name: Check build output
-        run: ls -R docs/_build
+      - name: Check docs directory contents
+        run: ls -al docs # List contents of docs instead of docs/build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/_build/html
+          path: docs/build/html
 
   deploy-docs:
     needs: build-docs
